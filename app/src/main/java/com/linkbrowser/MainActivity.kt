@@ -399,10 +399,7 @@ class MainActivity : AppCompatActivity() {
                 val out = sock.getOutputStream()
                 val inp = sock.getInputStream()
                 // Send HTTP CONNECT request to google.com:443
-                out.write("CONNECT www.google.com:443 HTTP/1.1
-Host: www.google.com:443
-
-".toByteArray())
+                out.write("CONNECT www.google.com:443 HTTP/1.1\r\nHost: www.google.com:443\r\n\r\n".toByteArray())
                 out.flush()
                 val buf = ByteArray(64)
                 val n = inp.read(buf)
