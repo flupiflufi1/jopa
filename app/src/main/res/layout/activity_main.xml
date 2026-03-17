@@ -1,0 +1,675 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#0D0D0F">
+
+    <!-- ═══════════════════════════════════
+         MAIN BROWSER CONTENT
+    ════════════════════════════════════ -->
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/mainContent"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#0D0D0F">
+
+        <!-- TOP BAR — Link mode -->
+        <LinearLayout
+            android:id="@+id/topBarLink"
+            android:layout_width="0dp"
+            android:layout_height="56dp"
+            android:background="#161618"
+            android:elevation="8dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
+            android:visibility="visible"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
+
+            <EditText
+                android:id="@+id/urlInput"
+                android:layout_width="0dp"
+                android:layout_height="40dp"
+                android:layout_weight="1"
+                android:background="@drawable/url_input_bg"
+                android:fontFamily="monospace"
+                android:hint="https://..."
+                android:imeOptions="actionGo"
+                android:inputType="textUri"
+                android:maxLines="1"
+                android:paddingStart="14dp"
+                android:paddingEnd="14dp"
+                android:singleLine="true"
+                android:textColor="#E8E8F0"
+                android:textColorHint="#555560"
+                android:textSize="13sp" />
+
+            <ImageButton
+                android:id="@+id/btnGo"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_marginStart="6dp"
+                android:background="@drawable/btn_round_bg"
+                android:contentDescription="Go"
+                android:src="@drawable/ic_go"
+                app:tint="#7C6CFF" />
+
+            <ImageButton
+                android:id="@+id/btnSettingsLink"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_marginStart="6dp"
+                android:background="@drawable/btn_round_bg"
+                android:contentDescription="Settings"
+                android:padding="8dp"
+                android:src="@drawable/ic_settings" />
+
+        </LinearLayout>
+
+        <!-- TOP BAR — Normal/Google mode -->
+        <LinearLayout
+            android:id="@+id/topBarNormal"
+            android:layout_width="0dp"
+            android:layout_height="56dp"
+            android:background="#161618"
+            android:elevation="8dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
+            android:visibility="gone"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
+
+            <!-- Google G logo -->
+            <TextView
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:layout_marginEnd="6dp"
+                android:background="@drawable/btn_round_bg"
+                android:gravity="center"
+                android:text="G"
+                android:textColor="#4285F4"
+                android:textSize="15sp"
+                android:textStyle="bold" />
+
+            <!-- Search / URL input -->
+            <EditText
+                android:id="@+id/searchInput"
+                android:layout_width="0dp"
+                android:layout_height="40dp"
+                android:layout_weight="1"
+                android:background="@drawable/url_input_bg"
+                android:hint="Поиск или адрес сайта"
+                android:imeOptions="actionSearch"
+                android:inputType="textNoSuggestions"
+                android:maxLines="1"
+                android:paddingStart="14dp"
+                android:paddingEnd="14dp"
+                android:singleLine="true"
+                android:textColor="#E8E8F0"
+                android:textColorHint="#555560"
+                android:textSize="13sp" />
+
+            <ImageButton
+                android:id="@+id/btnSearch"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_marginStart="6dp"
+                android:background="@drawable/btn_round_bg"
+                android:contentDescription="Search"
+                android:src="@drawable/ic_go"
+                app:tint="#4285F4" />
+
+            <ImageButton
+                android:id="@+id/btnSettingsNormal"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_marginStart="6dp"
+                android:background="@drawable/btn_round_bg"
+                android:contentDescription="Settings"
+                android:padding="8dp"
+                android:src="@drawable/ic_settings" />
+
+        </LinearLayout>
+
+        <!-- WEBVIEW area — anchored to whichever topbar is visible via barrier -->
+        <androidx.constraintlayout.widget.Barrier
+            android:id="@+id/topBarrier"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:barrierDirection="bottom"
+            app:constraint_referenced_ids="topBarLink,topBarNormal" />
+
+        <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+            android:id="@+id/swipeRefresh"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/topBarrier">
+
+            <WebView
+                android:id="@+id/webView"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
+
+        </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+
+        <ProgressBar
+            android:id="@+id/progressBar"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="0dp"
+            android:layout_height="3dp"
+            android:indeterminate="true"
+            android:indeterminateTint="#7C6CFF"
+            android:visibility="gone"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/topBarrier" />
+
+        <!-- Empty state: link mode -->
+        <TextView
+            android:id="@+id/emptyLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="monospace"
+            android:text="введи ссылку ↑"
+            android:textColor="#33334A"
+            android:textSize="18sp"
+            android:visibility="visible"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/topBarrier" />
+
+        <!-- Empty state: normal/google mode -->
+        <LinearLayout
+            android:id="@+id/emptyGoogle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/topBarrier">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:text="G"
+                android:textColor="#4285F4"
+                android:textSize="64sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="monospace"
+                android:text="введи запрос или сайт ↑"
+                android:textColor="#33334A"
+                android:textSize="14sp" />
+        </LinearLayout>
+
+        <!-- FABs (link mode only) -->
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/btnNext"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="20dp"
+            android:layout_marginBottom="24dp"
+            android:contentDescription="Next"
+            android:src="@drawable/ic_next"
+            app:backgroundTint="#7C6CFF"
+            app:elevation="12dp"
+            app:fabSize="normal"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:rippleColor="#9D8FFF"
+            app:tint="#FFFFFF" />
+
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/btnPrev"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="20dp"
+            android:layout_marginBottom="24dp"
+            android:contentDescription="Previous"
+            android:src="@drawable/ic_prev"
+            app:backgroundTint="#1E1E28"
+            app:elevation="12dp"
+            app:fabSize="normal"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:rippleColor="#7C6CFF"
+            app:tint="#7C6CFF" />
+
+        <TextView
+            android:id="@+id/scanStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="90dp"
+            android:background="@drawable/badge_bg"
+            android:fontFamily="monospace"
+            android:paddingStart="12dp"
+            android:paddingTop="6dp"
+            android:paddingEnd="12dp"
+            android:paddingBottom="6dp"
+            android:text="Поиск..."
+            android:textColor="#FF9D3F"
+            android:textSize="11sp"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent" />
+
+        <TextView
+            android:id="@+id/idBadge"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="36dp"
+            android:background="@drawable/badge_bg"
+            android:fontFamily="monospace"
+            android:paddingStart="12dp"
+            android:paddingTop="4dp"
+            android:paddingEnd="12dp"
+            android:paddingBottom="4dp"
+            android:text="ID: —"
+            android:textColor="#9D8FFF"
+            android:textSize="12sp"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <!-- ═══════════════════════════════════
+         SETTINGS OVERLAY
+    ════════════════════════════════════ -->
+    <FrameLayout
+        android:id="@+id/settingsOverlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone">
+
+        <View
+            android:id="@+id/settingsDim"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="#B3000000"
+            android:clickable="true"
+            android:focusable="true" />
+
+        <ScrollView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
+            android:overScrollMode="never">
+
+            <LinearLayout
+                android:id="@+id/settingsPanel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/settings_panel_bg"
+                android:orientation="vertical"
+                android:paddingStart="20dp"
+                android:paddingEnd="20dp"
+                android:paddingTop="12dp"
+                android:paddingBottom="36dp">
+
+                <View
+                    android:layout_width="36dp"
+                    android:layout_height="4dp"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_marginBottom="16dp"
+                    android:background="@drawable/panel_handle_bg" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="20dp"
+                    android:fontFamily="monospace"
+                    android:text="настройки"
+                    android:textColor="#E8E8F0"
+                    android:textSize="17sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="10dp"
+                    android:fontFamily="monospace"
+                    android:letterSpacing="0.12"
+                    android:text="РЕЖИМ БРАУЗЕРА"
+                    android:textColor="#555560"
+                    android:textSize="10sp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="24dp"
+                    android:background="@drawable/settings_card_bg"
+                    android:orientation="vertical">
+
+                    <LinearLayout
+                        android:id="@+id/optionLinkMode"
+                        android:layout_width="match_parent"
+                        android:layout_height="64dp"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:paddingStart="16dp"
+                        android:paddingEnd="12dp">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="🔗  Браузер для ссылки"
+                                android:textColor="#E8E8F0"
+                                android:textSize="14sp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="monospace"
+                                android:text="ad.adtng.com · авто-скип"
+                                android:textColor="#555560"
+                                android:textSize="11sp" />
+                        </LinearLayout>
+
+                        <RadioButton
+                            android:id="@+id/radioLinkMode"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:buttonTint="#7C6CFF"
+                            android:checked="true"
+                            android:clickable="false" />
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginStart="16dp"
+                        android:layout_marginEnd="16dp"
+                        android:background="#2A2A35" />
+
+                    <LinearLayout
+                        android:id="@+id/optionNormalMode"
+                        android:layout_width="match_parent"
+                        android:layout_height="64dp"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:paddingStart="16dp"
+                        android:paddingEnd="12dp">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="🌐  Обычный браузер"
+                                android:textColor="#E8E8F0"
+                                android:textSize="14sp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="monospace"
+                                android:text="Google · любые сайты · VPN"
+                                android:textColor="#555560"
+                                android:textSize="11sp" />
+                        </LinearLayout>
+
+                        <RadioButton
+                            android:id="@+id/radioNormalMode"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:buttonTint="#7C6CFF"
+                            android:checked="false"
+                            android:clickable="false" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- VPN section -->
+                <LinearLayout
+                    android:id="@+id/vpnSection"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="10dp"
+                        android:fontFamily="monospace"
+                        android:letterSpacing="0.12"
+                        android:text="VPN РАСШИРЕНИЕ"
+                        android:textColor="#555560"
+                        android:textSize="10sp" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="64dp"
+                        android:layout_marginBottom="12dp"
+                        android:background="@drawable/settings_card_bg"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:paddingStart="16dp"
+                        android:paddingEnd="12dp">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="🛡️  IP Unblock VPN"
+                                android:textColor="#E8E8F0"
+                                android:textSize="14sp" />
+
+                            <TextView
+                                android:id="@+id/vpnStatusText"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="monospace"
+                                android:text="выключен"
+                                android:textColor="#555560"
+                                android:textSize="11sp" />
+                        </LinearLayout>
+
+                        <Switch
+                            android:id="@+id/vpnSwitch"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:checked="false"
+                            android:thumbTint="#7C6CFF"
+                            android:trackTint="#2A2240" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="10dp"
+                        android:fontFamily="monospace"
+                        android:letterSpacing="0.12"
+                        android:text="РЕГИОН"
+                        android:textColor="#555560"
+                        android:textSize="10sp" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="8dp"
+                        android:orientation="horizontal">
+
+                        <LinearLayout
+                            android:id="@+id/serverBtn0"
+                            android:layout_width="0dp"
+                            android:layout_height="64dp"
+                            android:layout_weight="1"
+                            android:layout_marginEnd="6dp"
+                            android:background="@drawable/server_selected_bg"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:gravity="center"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:id="@+id/serverFlag0"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="🇺🇸"
+                                android:textSize="22sp" />
+
+                            <TextView
+                                android:id="@+id/serverName0"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="monospace"
+                                android:text="USA"
+                                android:textColor="#E8E8F0"
+                                android:textSize="11sp" />
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:id="@+id/serverBtn1"
+                            android:layout_width="0dp"
+                            android:layout_height="64dp"
+                            android:layout_weight="1"
+                            android:layout_marginStart="6dp"
+                            android:background="@drawable/server_default_bg"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:gravity="center"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:id="@+id/serverFlag1"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="🇬🇧"
+                                android:textSize="22sp" />
+
+                            <TextView
+                                android:id="@+id/serverName1"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="monospace"
+                                android:text="UK"
+                                android:textColor="#9D9DAA"
+                                android:textSize="11sp" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="24dp"
+                        android:orientation="horizontal">
+
+                        <LinearLayout
+                            android:id="@+id/serverBtn2"
+                            android:layout_width="0dp"
+                            android:layout_height="64dp"
+                            android:layout_weight="1"
+                            android:layout_marginEnd="6dp"
+                            android:background="@drawable/server_default_bg"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:gravity="center"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:id="@+id/serverFlag2"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="🇩🇪"
+                                android:textSize="22sp" />
+
+                            <TextView
+                                android:id="@+id/serverName2"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="monospace"
+                                android:text="Germany"
+                                android:textColor="#9D9DAA"
+                                android:textSize="11sp" />
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:id="@+id/serverBtn3"
+                            android:layout_width="0dp"
+                            android:layout_height="64dp"
+                            android:layout_weight="1"
+                            android:layout_marginStart="6dp"
+                            android:background="@drawable/server_default_bg"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:gravity="center"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:id="@+id/serverFlag3"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="🇳🇱"
+                                android:textSize="22sp" />
+
+                            <TextView
+                                android:id="@+id/serverName3"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="monospace"
+                                android:text="Netherlands"
+                                android:textColor="#9D9DAA"
+                                android:textSize="11sp" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/btnCloseSettings"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:background="@drawable/btn_rect_bg"
+                    android:fontFamily="monospace"
+                    android:gravity="center"
+                    android:text="готово"
+                    android:textColor="#7C6CFF"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+
+            </LinearLayout>
+        </ScrollView>
+    </FrameLayout>
+
+</FrameLayout>
