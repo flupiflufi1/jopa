@@ -42,6 +42,9 @@ class MainActivity : AppCompatActivity() {
     private var settingsOpen = false
     private var vpnEnabled = false
 
+    // ── Local proxy server ───────────────────────────────────────────────────
+    private val localProxy = LocalProxyServer(localPort = 8888)
+
     // ── VPN servers ──────────────────────────────────────────────────────────
     data class VpnServer(val name: String, val ip: String, val port: Int,
                          val type: String, val country: String)
@@ -88,6 +91,7 @@ class MainActivity : AppCompatActivity() {
         setupWebView()
         setupButtons()
         setupSettings()
+        localProxy.start()  // start local proxy server
         loadVpnServers()
     }
 
@@ -369,14 +373,13 @@ class MainActivity : AppCompatActivity() {
     private fun enableVpn() {
         if (servers.isEmpty()) return
         val sv = servers[selectedServerIndex]
-        // Test proxy reachability before applying, on background thread
+
         Thread {
-            // Step 1: check basic TCP reachability
+            // Test TCP reachability
             val reachable = try {
                 val sock = java.net.Socket()
                 sock.connect(java.net.InetSocketAddress(sv.ip, sv.port), 5000)
-                sock.close()
-                true
+                sock.close(); true
             } catch (_: Exception) { false }
 
             if (!reachable) {
@@ -385,107 +388,60 @@ class MainActivity : AppCompatActivity() {
                     binding.vpnSwitch.isChecked = false
                     binding.vpnStatusText.text = "недоступен"
                     binding.vpnStatusText.setTextColor(0xFFFF5555.toInt())
-                    Toast.makeText(this,
-                        "❌ Сервер ${sv.country} недоступен. Попробуй другой регион.",
-                        Toast.LENGTH_LONG).show()
+                    Toast.makeText(this, "❌ Сервер ${sv.country} недоступен", Toast.LENGTH_LONG).show()
                 }
                 return@Thread
             }
 
-            // Step 2: test if proxy supports HTTPS CONNECT tunnel
-            val supportsTunnel = try {
-                val sock = java.net.Socket(sv.ip, sv.port)
-                sock.soTimeout = 5000
-                val out = sock.getOutputStream()
-                val inp = sock.getInputStream()
-                // Send HTTP CONNECT request to google.com:443
-                out.write("CONNECT www.google.com:443 HTTP/1.1\r\nHost: www.google.com:443\r\n\r\n".toByteArray())
-                out.flush()
-                val buf = ByteArray(64)
-                val n = inp.read(buf)
-                sock.close()
-                val response = String(buf, 0, n.coerceAtLeast(0))
-                response.contains("200") // "200 Connection established"
-            } catch (_: Exception) { false }
+            // Configure local proxy to tunnel through upstream
+            localProxy.upstreamHost = sv.ip
+            localProxy.upstreamPort = sv.port
 
             handler.post {
-                // Apply proxy — if tunnel supported use for all, else HTTP only
-                setWebViewProxy(applicationContext, sv.ip, sv.port, sv.type, supportsTunnel)
-                binding.vpnStatusText.text = if (supportsTunnel)
-                    "включён · ${sv.country}" else "включён · ${sv.country} (HTTP)"
+                // Point WebView at our local proxy
+                applyLocalProxy(true)
+                binding.vpnStatusText.text = "включён · ${sv.country}"
                 binding.vpnStatusText.setTextColor(0xFF7C6CFF.toInt())
                 binding.webView.reload()
-                Toast.makeText(this, "🛡️ VPN: ${sv.country}", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "🛡️ VPN: ${sv.country} (${sv.ip}:${sv.port})", Toast.LENGTH_SHORT).show()
             }
         }.start()
     }
 
     private fun disableVpn() {
-        setWebViewProxy(applicationContext, "", 0)
+        localProxy.upstreamHost = ""
+        applyLocalProxy(false)
         binding.vpnStatusText.text = "выключен"
         binding.vpnStatusText.setTextColor(0xFF555560.toInt())
-        handler.post {
-            binding.webView.reload()
-        }
+        handler.post { binding.webView.reload() }
     }
 
-    /**
-     * Sets proxy for WebView using androidx.webkit.ProxyController.
-     * ipunblock servers are plain HTTP proxies — they do NOT support CONNECT,
-     * so HTTPS goes direct (no tunnel error), HTTP goes via proxy.
-     * For actual HTTPS proxying the VPN server must support CONNECT method.
-     */
-    @Suppress("UNCHECKED_CAST")
-    private fun setWebViewProxy(context: Context, host: String, port: Int,
-                                scheme: String = "http", supportsTunnel: Boolean = false) {
-        // System properties — fallback for non-WebView HTTP clients
-        val props = System.getProperties()
-        if (host.isNotEmpty()) {
-            props["http.proxyHost"]  = host; props["http.proxyPort"]  = port.toString()
-            props["https.proxyHost"] = host; props["https.proxyPort"] = port.toString()
-        } else {
-            props.remove("http.proxyHost"); props.remove("http.proxyPort")
-            props.remove("https.proxyHost"); props.remove("https.proxyPort")
-        }
-
-        // androidx.webkit.ProxyController — main method for WebView
+    /** Route WebView through localhost:8888 (our local proxy) */
+    private fun applyLocalProxy(enable: Boolean) {
         try {
             val executor = java.util.concurrent.Executors.newSingleThreadExecutor()
             val proxyController = androidx.webkit.ProxyController.getInstance()
-
-            if (host.isNotEmpty()) {
-                val isSocks = scheme.lowercase().startsWith("socks")
-                val proxyUri = if (isSocks) "socks5://$host:$port" else "http://$host:$port"
-
-                val builder = androidx.webkit.ProxyConfig.Builder()
-
-                if (isSocks) {
-                    // SOCKS5 handles both HTTP and HTTPS — proxy everything
-                    builder.addProxyRule(proxyUri)
-                } else {
-                    // Plain HTTP proxy: HTTPS CONNECT tunnels fail (ERR_TUNNEL_CONNECTION_FAILED)
-                    // Only proxy HTTP traffic; bypass HTTPS so it goes direct (no tunnel error)
-                    builder.addProxyRule(proxyUri, androidx.webkit.ProxyConfig.MATCH_HTTP)
-                    builder.addDirect()
-                }
-
-                proxyController.setProxyOverride(builder.build(), executor) {}
+            if (enable) {
+                proxyController.setProxyOverride(
+                    androidx.webkit.ProxyConfig.Builder()
+                        .addProxyRule("http://127.0.0.1:8888")
+                        .build(),
+                    executor
+                ) {}
             } else {
                 proxyController.clearProxyOverride(executor) {}
             }
-            return
         } catch (_: Exception) {}
 
-        // Broadcast fallback (older devices)
-        try {
-            val intent = android.content.Intent(android.net.Proxy.PROXY_CHANGE_ACTION)
-            if (host.isNotEmpty()) {
-                intent.putExtra("host", host)
-                intent.putExtra("port", port)
-                intent.putExtra("exclusionList", "")
-            }
-            context.applicationContext.sendBroadcast(intent)
-        } catch (_: Exception) {}
+        // System properties fallback
+        val props = System.getProperties()
+        if (enable) {
+            props["http.proxyHost"]  = "127.0.0.1"; props["http.proxyPort"]  = "8888"
+            props["https.proxyHost"] = "127.0.0.1"; props["https.proxyPort"] = "8888"
+        } else {
+            props.remove("http.proxyHost");  props.remove("http.proxyPort")
+            props.remove("https.proxyHost"); props.remove("https.proxyPort")
+        }
     }
 
         // ── Scan helpers ─────────────────────────────────────────────────────────
@@ -540,6 +496,11 @@ class MainActivity : AppCompatActivity() {
     private fun hideKeyboard() {
         (getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager)
             .hideSoftInputFromWindow(currentFocus?.windowToken, 0)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        localProxy.stop()
     }
 
     override fun onBackPressed() {
